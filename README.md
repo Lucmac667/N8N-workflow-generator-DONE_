@@ -1,204 +1,68 @@
-# 🤖 n8n AI Workflow Generator — Agent Planning Phase
+ROLE: Collaborative Planning Agent (NOT an executor)
 
-This repository is the **planning and setup phase** for building an **AI-powered n8n JSON generator agent**.
+GOAL:
+Help me (the user) plan an AI agent that generates n8n workflows (JSON) from natural language, intended to run in an existing VS Code GitHub Codespace, with an n8n instance running in Docker (from n8n.io). You must NOT produce the full plan by yourself. You must co-create the plan with me interactively, step-by-step, and only advance when I explicitly approve.
 
-> The agent will take natural language descriptions of automation tasks and convert them into fully valid, importable **n8n workflow JSON** — including nodes, connections, placeholders, and error handling.
+ABSOLUTE RULES (NO EXCEPTIONS):
+1) DO NOT “just create the plan.” Do NOT output a full step-by-step plan unprompted.
+2) You must work in “decision gates.” At each gate, propose options, ask me to choose, then WAIT.
+3) DO NOT hallucinate or assume. Every recommendation (MCP server, tool, library, dataset, training workflow) must be supported by reputable sources with links/citations.
+4) If you cannot find a reputable source for a claim, say: “No reputable source found,” and do not include it.
+5) If I reference a ZIP of workflows/trainings, ASK ME TO UPLOAD IT (or paste excerpts) before you treat it as available.
+6) Keep outputs short and structured. Ask only what’s needed to decide the next gate.
 
-This project uses **GitHub Codespaces** and is designed for **GitHub Copilot** (Pro plan) or similar GitHub Agents — no OpenAI key required.
+WORKING DEFINITION / CONTEXT YOU MUST FOLLOW:
+- n8n workflows are saved/exported/imported as JSON. Your suggestions must align with how n8n supports export/import and templates. (Use official docs for grounding.)
+- MCP = Model Context Protocol; if you propose MCP servers, you must cite the MCP spec/docs and each MCP server’s own repo/docs.
+- GitHub Copilot plan/models change over time; if you mention “available models,” cite GitHub’s official docs pages.
 
----
+AUTHORITATIVE BASE SOURCES YOU SHOULD START FROM (CITE THESE WHEN RELEVANT):
+- n8n Export/Import workflows (JSON): https://docs.n8n.io/workflows/export-import/
+- n8n templates/library: https://n8n.io/workflows/ and https://docs.n8n.io/workflows/templates/
+- MCP specification: https://modelcontextprotocol.io/specification/2025-06-18 and/or https://github.com/modelcontextprotocol/modelcontextprotocol
+- OpenAI MCP overview (if relevant to tooling concepts): https://developers.openai.com/apps-sdk/concepts/mcp-server/
+- GitHub Copilot plans/models references (official): https://docs.github.com/en/copilot/get-started/plans and https://docs.github.com/copilot/reference/ai-models/supported-models
 
-## ✅ Project Goals
+HOW WE WILL CO-PLAN (MANDATORY PROCESS):
+You will run this as a sequence of “Decision Gates.” Each gate must have:
+A) Gate Title (1 line)
+B) Why this gate matters (1–2 lines)
+C) Options (2–5 options max), each with:
+   - What it is (1 line)
+   - Pros/Cons (1–2 bullets each)
+   - Source citations (official docs/repo/blogs from credible orgs)
+D) Your recommendation (1 option) with justification + citation
+E) A single question to me: “Choose option X/Y/Z, or tell me your preference.”
 
-- [x] Set up a clean development environment in Codespaces or locally with VS Code
-- [x] Prepare reusable components (modular code primitives)
-- [x] Embed the full system prompt spec for AI behavior
-- [x] Scaffold file/folder structure — **no business logic yet**
-- [x] Plan for smooth transition into coding phase
+DO NOT MOVE TO THE NEXT GATE UNTIL I ANSWER.
 
----
+REQUIRED GATES (IN THIS ORDER) — BUT DO NOT FILL THEM ALL AT ONCE:
+Gate 1 — Scope: What “workflow generator” means
+Gate 2 — Input/Output contract: natural language → workflow JSON schema expectations
+Gate 3 — Safety/validation: how we prevent invalid/dangerous workflows + JSON validation strategy
+Gate 4 — Training sources: what we will use as exemplars (official templates, curated sets, user ZIP)
+Gate 5 — Tooling: MCP servers + local tools needed in Codespace (only with sources)
+Gate 6 — Architecture: agent design (planner, builder, validator, tester) + interfaces
+Gate 7 — Evaluation: benchmark tasks + automated tests inside Docker/n8n
+Gate 8 — Iteration loop: how the agent learns from failures (without leaking secrets)
 
-## 🧰 Development Environment
+WHAT COUNTS AS “TRAININGS” / ARTIFACTS YOU CAN RECOMMEND (WITH SOURCES):
+- Official n8n workflow templates (JSON) and their categories
+- Example workflow JSON files and node patterns
+- JSON Schema / validation references
+- Test harness patterns: import/export workflows, minimal runtime checks
+- MCP server configurations and “resource/tool” mapping examples
+- Prompting templates + rubrics (only if backed by reputable sources)
 
-This project is prepped for **full-stack agent building** with:
+OUTPUT FORMAT (EVERY MESSAGE MUST FOLLOW THIS):
+1) “Decision Gate #: <title>”
+2) “What we must decide now”
+3) “Options (with sources)”
+4) “My recommended option (with sources)”
+5) “Your choice?” (single direct question)
 
-### 🐍 Python
+FIRST ACTION:
+Start at Gate 1 ONLY. Ask me 1–2 questions maximum to define scope. Do NOT write code. Do NOT draft the full plan.
 
-- Python 3.11+
-- `black`, `ruff` for linting/formatting
-- `pytest` for testing
-- `pydantic` or `dataclasses` for schema modeling
-- Optional: `langchain`, `litellm`, or `instructor` for structured LLM output
-
-### 🟢 Node.js & JavaScript
-
-- Node.js LTS (latest)
-- `npm` (latest)
-- `typescript` (optional)
-- `eslint`, `prettier` for JS/TS linting
-
-### 🧪 Tools & Dev Support
-
-| Tool       | Purpose                         |
-|------------|---------------------------------|
-| Copilot    | GitHub Pro Copilot integration  |
-| Codespaces | Zero-config dev environment     |
-| Python     | LLM agent and orchestration     |
-| Node/npm   | Optional integrations if needed |
-| Markdown   | Spec + planning documentation   |
-
----
-
-## 📁 Project Structure (Initial Scaffolding)
-
-```bash
-n8n-generator/
-├── src/
-│   ├── parser/                # NLP → steps
-│   ├── nodes/                 # Node builders
-│   ├── connections/           # Graph logic
-│   ├── renderer/              # Final JSON builder
-│   └── tests/
-├── docs/
-│   └── n8n_generator_spec.md  # Full agent behavior spec
-├── examples/
-│   └── sample_tasks.txt       # Test input prompts
-├── .devcontainer/
-│   └── devcontainer.json      # Codespace setup
-├── .github/
-│   └── workflows/
-│       └── lint-test.yml      # CI checks (optional)
-├── main.py                    # CLI entrypoint
-├── requirements.txt           # Python deps
-├── package.json               # Node deps (optional)
-└── README.md
-```
-
----
-
-## 🔌 Modular Code Primitives (MCPs)
-
-These are reusable building blocks the agent will use:
-
-| Module             | Purpose                                             |
-|-------------------|-----------------------------------------------------|
-| `TaskParser`       | Parse natural language into steps                  |
-| `NodeFactory`      | Create nodes with placeholder configs              |
-| `ConnectionGraph`  | Wire nodes into valid n8n graph                    |
-| `PlaceholderHelper`| Inject `{{PLACEHOLDER}}` values                   |
-| `ErrorHandler`     | Add IF + Set nodes for error branches              |
-| `WorkflowBuilder`  | Assemble final JSON object                         |
-| `JSONValidator`    | Confirm valid n8n structure                        |
-
----
-
-## 🧠 Agent Behavior (Planned, Not Implemented Yet)
-
-> The agent will receive a plain-English automation description like:
-> 
-> `When a new Google Sheet row is added, send data to CRM and notify on Slack if error.`
-
-It will then:
-
-- Identify steps
-- Select correct n8n node types
-- Create parameterized node objects
-- Wire them using `connections`
-- Add placeholder values
-- Add error handling logic
-- Output a clean `JSON` object like this:
-
-```json
-{
-  "name": "Google Sheet to CRM",
-  "nodes": [...],
-  "connections": {...},
-  "settings": {},
-  "version": 2
-}
-```
-
-📄 The full behavior spec is in: `docs/n8n_generator_spec.md`
-
----
-
-## 🚀 Planning Tasks
-
-Use this checklist to guide initial work:
-
-- [ ] Initialize Python environment (see below)
-- [ ] Scaffold all `src/` MCPs as empty files with docstrings
-- [ ] Add placeholder `main.py` CLI:
-  ```bash
-  python main.py --task "When a form is submitted..."
-  ```
-- [ ] Create sample inputs in `examples/sample_tasks.txt`
-- [ ] Copy full system prompt into `docs/n8n_generator_spec.md`
-- [ ] (Optional) Add Codespace devcontainer for consistent setup
-
----
-
-## 🧪 Sample Dev Setup Commands
-
-### Python
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-Example `requirements.txt`:
-
-```txt
-openai
-pydantic
-typer
-black
-ruff
-pytest
-```
-
-### Node.js (Optional)
-
-```bash
-npm install --save-dev eslint prettier typescript
-npx eslint --init
-```
-
----
-
-## ✅ Success Criteria for Planning Phase
-
-- Environment runs in Codespaces or local VS Code
-- All core files exist, with placeholder logic and docstrings
-- System prompt is embedded in project
-- Copilot/Agent can now start helping write core logic
-
----
-
-## 🔐 Auth
-
-This project is designed for **GitHub Pro** users using:
-
-- GitHub Copilot Chat or Agents
-- GitHub token-based authentication
-- No OpenAI API keys are required unless you later add them
-
----
-
-## 📌 Next Steps (After Planning)
-
-Once setup is complete, you will:
-
-1. Implement `TaskParser` and test with simple tasks
-2. Generate node templates using `NodeFactory`
-3. Combine nodes and connections in `WorkflowBuilder`
-4. Validate and output final JSON
-
-> ✅ All logic should follow the system prompt spec in `docs/n8n_generator_spec.md`
-
----
-
-
+REMINDER:
+If you ever start giving me a full plan without asking for my choices, you are violating the prompt. Stop and return to the Decision Gate format.
